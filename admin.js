@@ -10,6 +10,8 @@ const logoutBtn = document.getElementById("logoutBtn");
 const addProductForm = document.getElementById("addProductForm");
 const adminProductList = document.getElementById("adminProductList");
 
+let unsubscribe = null; // Fix: Declare explicit scope
+
 // ===== Auth Logic =====
 function checkAuth() {
     if (isAuthenticated()) {

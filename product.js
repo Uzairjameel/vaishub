@@ -1,4 +1,4 @@
-import { getProductById } from "./products-data.js";
+import { subscribeToProduct } from "./products-data.js";
 
 // ===== Elements =====
 const productContainer = document.getElementById("productContainer");
@@ -7,10 +7,12 @@ const cartCountEl = document.getElementById("cartcount");
 // ===== Cart =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
+// ===== Update Cart Count =====
 function updateCartCount() {
     if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
+// ===== Add to Cart =====
 function addToCart(product) {
     cart.push(product);
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -18,7 +20,10 @@ function addToCart(product) {
     alert("Product added to cart!");
 }
 
-async function initProductPage() {
+// ===== State for Cleanup =====
+let unsubscribeProduct = null;
+
+function initProductPage() {
     updateCartCount();
 
     // Get ID
@@ -30,11 +35,13 @@ async function initProductPage() {
         return;
     }
 
-    try {
-        const product = await getProductById(productId);
+    // Cleanup previous listener if strict mode/re-run happens
+    if (unsubscribeProduct) unsubscribeProduct();
 
+    // Subscribe to Realtime Updates
+    unsubscribeProduct = subscribeToProduct(productId, (product) => {
         if (!product) {
-            if (productContainer) productContainer.innerHTML = "<p>Product not found.</p>";
+            if (productContainer) productContainer.innerHTML = "<p>Product not found (it may have been deleted).</p>";
             return;
         }
 
@@ -59,11 +66,7 @@ async function initProductPage() {
                 btn.addEventListener("click", () => addToCart(product));
             }
         }
-
-    } catch (e) {
-        console.error("Error loading product:", e);
-        if (productContainer) productContainer.innerHTML = "<p>Error loading product details.</p>";
-    }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", initProductPage);

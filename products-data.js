@@ -52,6 +52,26 @@ export function subscribeToProducts(onUpdate) {
 }
 
 /**
+ * Subscribes to real-time updates of a SINGLE product.
+ * @param {string} id 
+ * @param {function} onUpdate 
+ * @returns {function} unsubscribe callback
+ */
+export function subscribeToProduct(id, onUpdate) {
+    if (!id) return () => { };
+    const docRef = doc(db, PRODUCTS_COLLECTION, id);
+    return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            onUpdate({ id: docSnap.id, ...docSnap.data() });
+        } else {
+            onUpdate(null); // Product deleted or doesn't exist
+        }
+    }, (error) => {
+        console.error("Error subscribing to product:", error);
+    });
+}
+
+/**
  * Retrieves a single product by ID (One-time fetch).
  * @param {string} id 
  * @returns {Promise<Object|null>}
