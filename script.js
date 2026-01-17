@@ -109,7 +109,7 @@ if (categoryFilter) categoryFilter.addEventListener("change", applyFilters);
 if (priceFilter) priceFilter.addEventListener("change", applyFilters);
 
 // ===== Initial Load with Real-time Sync =====
-import { subscribeToProducts } from "./products-data.js";
+
 
 // Make products global so filters can use it
 // products variable is already declared at the top as 'let products = []'
