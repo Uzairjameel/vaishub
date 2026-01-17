@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Vaishub</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <a href="index.html">Vaishub Admin</a>
+        </div>
+    </header>
+
+    <main class="admin-panel">
+        <h2>Manage Products</h2>
+
+        <form id="addProductForm">
+            <input type="text" id="productName" placeholder="Product Name" required>
+            <input type="number" id="productPrice" placeholder="Price" required>
+            <input type="text" id="productCategory" placeholder="Category" required>
+            <input type="text" id="productImage" placeholder="Image URL" required>
+            <button type="submit">Add Product</button>
+        </form>
+
+        <h3>Existing Products</h3>
+        <div id="adminProductList"></div>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>

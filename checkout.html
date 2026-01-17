@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+    <div class="nav-container">
+        <a href="index.html">Vaishub</a>
+        <div class="nav-actions">
+            <a href="cart.html">🛒 Cart <span id="cartcount">0</span></a>
+        </div>
+    </div>
+</header>
+
+
+
+<section class="checkout">
+    <h2>Checkout</h2>
+
+    <div id="checkoutItems"></div>
+<div class="checkout-summary">
+    <h3>Total: $<span id="checkoutTotal">0</span></h3>
+</div>
+
+
+    <form id="shippingForm">
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="text" id="address" placeholder="Address" required>
+    <input type="text" id="city" placeholder="City" required>
+    <input type="text" id="zip" placeholder="ZIP / Postal Code" required>
+    <input type="text" id="country" placeholder="Country" required>
+    <!-- New Phone Number Field -->
+    <input type="tel" id="phone" placeholder="Phone Number" required>
+    <button type="submit">Place Order</button>
+</form>
+
+</section>
+
+
+<script src="checkout.js"></script>
+</body>
+</html>
