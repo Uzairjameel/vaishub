@@ -1,90 +1,49 @@
-// ===== Product Data =====
-const products = [
-    { id: 1, name: "Wireless Headphones", price: 25, category: "Electronics" },
-    { id: 2, name: "Smart Watch", price: 40, category: "Electronics" },
-    { id: 3, name: "Bluetooth Speaker", price: 30, category: "Audio" },
-    { id: 4, name: "Gaming Mouse", price: 15, category: "Accessories" }
-];
-
-// ===== Elements =====
-const cartCountEl = document.getElementById("cartcount");
-const shippingForm = document.getElementById("shippingForm");
-
-// ===== Cart from LocalStorage =====
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-// ===== Firebase Firestore =====
-import { db } from "./firebase-config.js"; // Firebase script exported db
+import { db } from "./firebase-config.js";
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-// ===== Update Cart Count =====
-function updateCartCount() {
-    cartCountEl.textContent = cart.length;
+// ===== Cart =====
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+// ===== Elements =====
+const totalEl = document.getElementById("total");
+const shippingForm = document.getElementById("shippingForm");
+
+// ===== Render Total =====
+function renderTotal() {
+    let total = 0;
+    cart.forEach(item => total += item.price);
+    totalEl.textContent = `$${total}`;
 }
 
-// ===== Add to Cart =====
-function addToCart(product) {
-    cart.push(product);
-    localStorage.setItem("cart", JSON.stringify(cart));
-    updateCartCount();
-}
+renderTotal();
 
-// ===== Render Products =====
+// ===== Place Order =====
+shippingForm.addEventListener("submit", async function (e) {
+    e.preventDefault();
 
+    if (cart.length === 0) {
+        alert("Cart is empty");
+        return;
+    }
 
-// ===== Initial Load =====
+    const order = {
+        name: document.getElementById("name").value,
+        phone: document.getElementById("phone").value,
+        address: document.getElementById("address").value,
+        city: document.getElementById("city").value,
+        items: cart,
+        total: cart.reduce((sum, i) => sum + i.price, 0),
+        createdAt: new Date()
+    };
 
-updateCartCount();
+    try {
+        await addDoc(collection(db, "orders"), order);
+        alert("Order placed successfully!");
 
-// ===== Search Functionality =====
-const searchInput = document.getElementById("searchinput");
-searchInput.addEventListener("input", function () {
-    const keyword = searchInput.value.toLowerCase();
-
-    const filteredProducts = products.filter(product =>
-        product.name.toLowerCase().includes(keyword)
-    );
-
-    if (filteredProducts.length === 0) {
-        productGrid.innerHTML = `<p class="no-products">No products found.</p>`;
-    } else {
-        renderProducts(filteredProducts);
+        localStorage.removeItem("cart");
+        window.location.href = "index.html";
+    } catch (err) {
+        console.error(err);
+        alert("Error placing order");
     }
 });
-
-// ===== Checkout Form Submit =====
-if (shippingForm) {
-    shippingForm.addEventListener("submit", async function (e) {
-        e.preventDefault();
-
-        if (cart.length === 0) {
-            alert("Your cart is empty!");
-            return;
-        }
-
-        const order = {
-            name: document.getElementById("name").value.trim(),
-            phone: document.getElementById("phone").value.trim(),
-            address: document.getElementById("address").value.trim(),
-            city: document.getElementById("city").value.trim(),
-            zip: document.getElementById("zip").value.trim(),
-            country: document.getElementById("country").value.trim(),
-            items: [...cart],
-            total: cart.reduce((sum, item) => sum + item.price, 0),
-            date: new Date().toLocaleString()
-        };
-
-        try {
-            await addDoc(collection(db, "orders"), order);
-            alert(`Thank you ${order.name}! Your order has been placed successfully.`);
-
-            cart = [];
-            localStorage.setItem("cart", JSON.stringify(cart));
-            updateCartCount();
-            shippingForm.reset();
-        } catch (error) {
-            console.error("Error placing order:", error);
-            alert("Something went wrong. Try again!");
-        }
-    });
-}
