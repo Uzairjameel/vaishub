@@ -1,25 +1,16 @@
 import { getProductById } from "./products-data.js";
 
-// ===== Get Elements =====
+// ===== Elements =====
 const productContainer = document.getElementById("productContainer");
 const cartCountEl = document.getElementById("cartcount");
 
-// ===== Get Cart from LocalStorage =====
+// ===== Cart =====
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
-// ===== Get product ID from URL =====
-const urlParams = new URLSearchParams(window.location.search);
-const productId = urlParams.get("id"); // Keep as string for loose comparison in getProductById
-
-// ===== Find product =====
-const product = getProductById(productId);
-
-// ===== Update Cart Count =====
 function updateCartCount() {
-    cartCountEl.textContent = cart.length;
+    if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
-// ===== Add to Cart =====
 function addToCart(product) {
     cart.push(product);
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -27,24 +18,52 @@ function addToCart(product) {
     alert("Product added to cart!");
 }
 
-// ===== Render Product =====
-function renderProduct() {
-    if (!product) {
-        productContainer.innerHTML = "<p>Product not found.</p>";
+async function initProductPage() {
+    updateCartCount();
+
+    // Get ID
+    const urlParams = new URLSearchParams(window.location.search);
+    const productId = urlParams.get("id");
+
+    if (!productId) {
+        if (productContainer) productContainer.innerHTML = "<p>No product ID specified.</p>";
         return;
     }
 
-    productContainer.innerHTML = `
-        <div class="product-img">Image</div>
-        <h2>${product.name}</h2>
-        <p class="price">$${product.price}</p>
-        <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Lorem ipsum dolor sit amet.</p>
-        <button id="addToCartBtn">Add to Cart</button>
-    `;
+    try {
+        const product = await getProductById(productId);
 
-    document.getElementById("addToCartBtn").addEventListener("click", () => addToCart(product));
+        if (!product) {
+            if (productContainer) productContainer.innerHTML = "<p>Product not found.</p>";
+            return;
+        }
+
+        // Render
+        if (productContainer) {
+            productContainer.innerHTML = `
+                <div class="product-img">
+                     <img src="${product.image || 'images/mouse.jpeg'}" alt="${product.name}" style="max-width:100%; border-radius:8px;" onerror="this.src='images/mouse.jpeg'" />
+                </div>
+                <div class="product-info">
+                    <h2>${product.name}</h2>
+                    <p class="category">${product.category}</p>
+                    <p class="price">$${product.price}</p>
+                    <p class="desc">Lorem ipsum dolor sit amet, consectetur adipiscing elit. High quality ${product.category}.</p>
+                    <button id="addToCartBtn" class="add-btn">Add to Cart</button>
+                </div>
+            `;
+
+            // Re-select button after innerHTML write
+            const btn = document.getElementById("addToCartBtn");
+            if (btn) {
+                btn.addEventListener("click", () => addToCart(product));
+            }
+        }
+
+    } catch (e) {
+        console.error("Error loading product:", e);
+        if (productContainer) productContainer.innerHTML = "<p>Error loading product details.</p>";
+    }
 }
 
-// ===== Initial Render =====
-renderProduct();
-updateCartCount();
+document.addEventListener("DOMContentLoaded", initProductPage);

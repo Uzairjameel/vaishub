@@ -1,12 +1,8 @@
 import { getAllProducts } from "./products-data.js";
 
-// ===== Product Data =====
-// ===== Load products from centralized module =====
-let products = getAllProducts();
-
-// Note: We no longer need the fallback logic here as it is handled in getAllProducts()
-
-
+// ===== Global State =====
+let products = [];
+let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // ===== Elements =====
 const productGrid = document.getElementById("productGrid");
@@ -15,16 +11,14 @@ const searchInput = document.getElementById("searchinput");
 const categoryFilter = document.getElementById("categoryFilter");
 const priceFilter = document.getElementById("priceFilter");
 
-// ===== Cart from LocalStorage =====
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
 // ===== Update Cart Count =====
 function updateCartCount() {
-    cartCountEl.textContent = cart.length;
+    if (cartCountEl) cartCountEl.textContent = cart.length;
 }
 
 // ===== Add to Cart =====
 function addToCart(product) {
+    // Basic duplicates check can be added here if needed
     cart.push(product);
     localStorage.setItem("cart", JSON.stringify(cart));
     updateCartCount();
@@ -33,6 +27,7 @@ function addToCart(product) {
 
 // ===== Render Products =====
 function renderProducts(productList) {
+    if (!productGrid) return;
     productGrid.innerHTML = "";
 
     productList.forEach(product => {
@@ -41,15 +36,14 @@ function renderProducts(productList) {
 
         // Entire card clickable except Add to Cart button
         productCard.innerHTML = `
-    <a href="product.html?id=${product.id}" class="product-link">
-        <div class="product-img">
-            <img src="${product.image}" alt="${product.name}" />
-        </div>
-        <h3>${product.name}</h3>
-    </a>
-    <p class="price">$${product.price}</p>
-`;
-
+        <a href="product.html?id=${product.id}" class="product-link">
+            <div class="product-img">
+                <img src="${product.image || 'images/mouse.jpeg'}" alt="${product.name}" onerror="this.src='images/mouse.jpeg'"/>
+            </div>
+            <h3>${product.name}</h3>
+        </a>
+        <p class="price">$${product.price}</p>
+        `;
 
         // Add to Cart button
         const button = document.createElement("button");
@@ -66,6 +60,8 @@ function renderProducts(productList) {
 
 // ===== Filter & Search Logic =====
 function applyFilters() {
+    if (!products.length) return;
+
     const keyword = searchInput.value.toLowerCase();
     const selectedCategory = categoryFilter.value;
     const selectedPrice = priceFilter.value;
@@ -94,8 +90,10 @@ function applyFilters() {
     }
 }
 
+// ===== Scroll Effect =====
 window.addEventListener("scroll", () => {
     const header = document.querySelector(".header");
+    if (!header) return;
     if (window.scrollY > 50) {
         header.style.padding = "5px 20px";
         header.style.boxShadow = "0 4px 10px rgba(0,0,0,0.2)";
@@ -105,12 +103,23 @@ window.addEventListener("scroll", () => {
     }
 });
 
-
 // ===== Event Listeners =====
-searchInput.addEventListener("input", applyFilters);
-categoryFilter.addEventListener("change", applyFilters);
-priceFilter.addEventListener("change", applyFilters);
+if (searchInput) searchInput.addEventListener("input", applyFilters);
+if (categoryFilter) categoryFilter.addEventListener("change", applyFilters);
+if (priceFilter) priceFilter.addEventListener("change", applyFilters);
 
 // ===== Initial Load =====
-renderProducts(products);
-updateCartCount();
+async function init() {
+    updateCartCount();
+    try {
+        console.log("Fetching products from Firestore...");
+        products = await getAllProducts();
+        console.log("Products loaded:", products);
+        renderProducts(products);
+    } catch (e) {
+        console.error("Failed to load products:", e);
+        if (productGrid) productGrid.innerHTML = "<p>Error loading products. Check console.</p>";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", init);
