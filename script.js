@@ -1,17 +1,10 @@
+import { getAllProducts } from "./products-data.js";
+
 // ===== Product Data =====
-// ===== Load products from localStorage or use default =====
-let products = JSON.parse(localStorage.getItem("products"));
+// ===== Load products from centralized module =====
+let products = getAllProducts();
 
-if (!products || products.length === 0) {
-    products = [
-        { id: 1, name: "Wireless Headphones", price: 25, category: "Electronics", image: "images/headphones.jpeg" },
-        { id: 2, name: "Smart Watch", price: 40, category: "Electronics", image: "images/smartwatch.jpeg" },
-        { id: 3, name: "Bluetooth Speaker", price: 30, category: "Audio", image: "images/speaker.jpeg" },
-        { id: 4, name: "Gaming Mouse", price: 15, category: "Accessories", image: "images/mouse.jpeg" }
-    ];
-
-    localStorage.setItem("products", JSON.stringify(products));
-}
+// Note: We no longer need the fallback logic here as it is handled in getAllProducts()
 
 
 

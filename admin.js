@@ -1,28 +1,62 @@
+import { getAllProducts, addProduct, deleteProduct } from "./products-data.js";
+import { login, logout, isAuthenticated } from "./auth.js";
+
 // ===== Elements =====
+const loginSection = document.getElementById("loginSection");
+const dashboardSection = document.getElementById("dashboardSection");
+const loginForm = document.getElementById("loginForm");
+const logoutBtn = document.getElementById("logoutBtn");
+
 const addProductForm = document.getElementById("addProductForm");
 const adminProductList = document.getElementById("adminProductList");
 
-// ===== Load products from localStorage =====
-let products = JSON.parse(localStorage.getItem("products")) || [];
+// ===== Auth Logic =====
+function checkAuth() {
+    if (isAuthenticated()) {
+        loginSection.style.display = "none";
+        dashboardSection.style.display = "block";
+        renderAdminProducts();
+    } else {
+        loginSection.style.display = "block";
+        dashboardSection.style.display = "none";
+    }
+}
+
+loginForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value;
+    const password = document.getElementById("password").value;
+
+    if (login(email, password)) {
+        checkAuth();
+        loginForm.reset();
+    } else {
+        alert("Invalid credentials!");
+    }
+});
+
+logoutBtn.addEventListener("click", () => {
+    logout();
+});
 
 // ===== Render products =====
 function renderAdminProducts() {
+    const products = getAllProducts();
     adminProductList.innerHTML = "";
-    products.forEach((product, index) => {
+    products.forEach((product) => {
         const div = document.createElement("div");
         div.className = "admin-product-card";
         div.innerHTML = `
             <strong>${product.name}</strong> | $${product.price} | ${product.category}
-            <button class="delete-btn" data-index="${index}">Delete</button>
+            <button class="delete-btn" data-id="${product.id}">Delete</button>
         `;
         adminProductList.appendChild(div);
     });
 
     document.querySelectorAll(".delete-btn").forEach(btn => {
         btn.addEventListener("click", () => {
-            const index = parseInt(btn.dataset.index);
-            products.splice(index, 1);
-            localStorage.setItem("products", JSON.stringify(products));
+            const id = btn.dataset.id;
+            deleteProduct(id);
             renderAdminProducts();
         });
     });
@@ -37,13 +71,10 @@ addProductForm.addEventListener("submit", (e) => {
     const category = document.getElementById("productCategory").value.trim();
     const image = document.getElementById("productImage").value.trim();
 
-    const id = products.length > 0 ? products[products.length - 1].id + 1 : 1;
-
-    products.push({ id, name, price, category, image });
-    localStorage.setItem("products", JSON.stringify(products));
+    addProduct({ name, price, category, image });
     renderAdminProducts();
     addProductForm.reset();
 });
 
-// ===== Initial render =====
-renderAdminProducts();
+// ===== Initial Check =====
+checkAuth();

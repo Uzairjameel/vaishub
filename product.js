@@ -1,3 +1,5 @@
+import { getProductById } from "./products-data.js";
+
 // ===== Get Elements =====
 const productContainer = document.getElementById("productContainer");
 const cartCountEl = document.getElementById("cartcount");
@@ -7,18 +9,10 @@ let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // ===== Get product ID from URL =====
 const urlParams = new URLSearchParams(window.location.search);
-const productId = parseInt(urlParams.get("id"));
-
-// ===== Products array (same as index.js) =====
-const products = [
-    { id: 1, name: "Wireless Headphones", price: 25 },
-    { id: 2, name: "Smart Watch", price: 40 },
-    { id: 3, name: "Bluetooth Speaker", price: 30 },
-    { id: 4, name: "Gaming Mouse", price: 15 }
-];
+const productId = urlParams.get("id"); // Keep as string for loose comparison in getProductById
 
 // ===== Find product =====
-const product = products.find(p => p.id === productId);
+const product = getProductById(productId);
 
 // ===== Update Cart Count =====
 function updateCartCount() {
