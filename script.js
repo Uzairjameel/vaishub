@@ -1,4 +1,4 @@
-import { getAllProducts } from "./products-data.js";
+import { subscribeToProducts } from "./products-data.js";
 
 // ===== Global State =====
 let products = [];
@@ -108,18 +108,32 @@ if (searchInput) searchInput.addEventListener("input", applyFilters);
 if (categoryFilter) categoryFilter.addEventListener("change", applyFilters);
 if (priceFilter) priceFilter.addEventListener("change", applyFilters);
 
-// ===== Initial Load =====
-async function init() {
+// ===== Initial Load with Real-time Sync =====
+import { subscribeToProducts } from "./products-data.js";
+
+// Make products global so filters can use it
+// products variable is already declared at the top as 'let products = []'
+
+function init() {
     updateCartCount();
-    try {
-        console.log("Fetching products from Firestore...");
-        products = await getAllProducts();
-        console.log("Products loaded:", products);
-        renderProducts(products);
-    } catch (e) {
-        console.error("Failed to load products:", e);
-        if (productGrid) productGrid.innerHTML = "<p>Error loading products. Check console.</p>";
-    }
+    console.log("Subscribing to products...");
+
+    // Subscribe to real-time updates
+    subscribeToProducts((updatedProducts) => {
+        console.log("Products updated:", updatedProducts);
+        products = updatedProducts;
+
+        // If we have filters active, apply them. Otherwise render all.
+        const keyword = searchInput ? searchInput.value : "";
+        const cat = categoryFilter ? categoryFilter.value : "";
+        const price = priceFilter ? priceFilter.value : "";
+
+        if (keyword || cat || price) {
+            applyFilters();
+        } else {
+            renderProducts(products);
+        }
+    });
 }
 
 document.addEventListener("DOMContentLoaded", init);

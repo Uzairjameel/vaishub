@@ -1,4 +1,4 @@
-import { getAllProducts, addProduct, deleteProduct } from "./products-data.js";
+import { subscribeToProducts, addProduct, deleteProduct } from "./products-data.js";
 import { login, logout, isAuthenticated } from "./auth.js";
 
 // ===== Elements =====
@@ -15,7 +15,7 @@ function checkAuth() {
     if (isAuthenticated()) {
         loginSection.style.display = "none";
         dashboardSection.style.display = "block";
-        renderAdminProducts(); // Now async, but fire-and-forget is ok for initial load
+        setupRealtimeProducts();
     } else {
         loginSection.style.display = "block";
         dashboardSection.style.display = "none";
@@ -40,17 +40,28 @@ if (loginForm) {
 if (logoutBtn) {
     logoutBtn.addEventListener("click", () => {
         logout();
+        checkAuth(); // Re-check auth status after logout
     });
 }
 
-// ===== Render products =====
-async function renderAdminProducts() {
-    if (!adminProductList) return;
-    adminProductList.innerHTML = "<p>Loading products...</p>";
+// ===== Render products (Real-time) =====
+// We don't export this anymore, it's internal
+// But wait, the auth check puts this in a flow.
+// We will define a setupListener function.
 
-    try {
-        const products = await getAllProducts();
+function setupRealtimeProducts() {
+    if (!adminProductList) return;
+
+    // Unsubscribe previous if exists (though usually we just load once)
+    if (unsubscribe) unsubscribe();
+
+    unsubscribe = subscribeToProducts((products) => {
         adminProductList.innerHTML = "";
+
+        if (products.length === 0) {
+            adminProductList.innerHTML = "<p>No products found.</p>";
+            return;
+        }
 
         products.forEach((product) => {
             const div = document.createElement("div");
@@ -70,16 +81,12 @@ async function renderAdminProducts() {
             btn.addEventListener("click", async () => {
                 if (confirm("Are you sure you want to delete this product?")) {
                     const id = btn.dataset.id;
+                    // Optimistic update not needed because onSnapshot will fire
                     await deleteProduct(id);
-                    await renderAdminProducts(); // Refresh list
                 }
             });
         });
-
-    } catch (e) {
-        console.error(e);
-        adminProductList.innerHTML = "<p>Error loading products.</p>";
-    }
+    });
 }
 
 // ===== Add product =====
@@ -92,7 +99,6 @@ if (addProductForm) {
         const category = document.getElementById("productCategory").value.trim();
         const image = document.getElementById("productImage").value.trim();
 
-        // Basic validation
         if (!name || !price || !category) {
             alert("Please fill in required fields");
             return;
@@ -109,7 +115,7 @@ if (addProductForm) {
 
             alert("Product added!");
             addProductForm.reset();
-            await renderAdminProducts();
+            // No need to call render, snapshot handles it
 
         } catch (e) {
             alert("Error adding product: " + e.message);

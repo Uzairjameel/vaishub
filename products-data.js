@@ -1,6 +1,6 @@
 
 import { db } from "./firebase-config.js";
-import { collection, getDocs, getDoc, addDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { collection, getDocs, getDoc, addDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ===== Default Products Data (for seeding) =====
 const DEFAULT_PRODUCTS = [
@@ -13,24 +13,31 @@ const DEFAULT_PRODUCTS = [
 const PRODUCTS_COLLECTION = "products";
 
 /**
- * Retrieves all products from Firestore.
- * If empty, seeds default products.
- * @returns {Promise<Array>}
+ * Subscribes to real-time updates of the products collection.
+ * @param {function} onUpdate - Callback function receiving array of products
  */
-export async function getAllProducts() {
-    try {
-        const colRef = collection(db, PRODUCTS_COLLECTION);
-        const snapshot = await getDocs(colRef);
+export function subscribeToProducts(onUpdate) {
+    const colRef = collection(db, PRODUCTS_COLLECTION);
 
-        if (snapshot.empty) {
-            console.log("No products in Firestore. Seeding defaults...");
-            // Seed sequentially to avoid flooding
-            const seeded = [];
-            for (const p of DEFAULT_PRODUCTS) {
-                const docRef = await addDoc(colRef, p);
-                seeded.push({ id: docRef.id, ...p });
+    // Check for seeding ONCE (helper logic)
+    // We don't want to seed every time, but checking once per session is okay-ish.
+    // Better: If snapshot is empty, we seed.
+    let seeding = false;
+
+    return onSnapshot(colRef, async (snapshot) => {
+        if (snapshot.empty && !seeding) {
+            console.log("No products found. Seeding defaults...");
+            seeding = true; // Prevent multiple triggers
+            try {
+                for (const p of DEFAULT_PRODUCTS) {
+                    await addDoc(colRef, p);
+                }
+                // The snapshot will fire again automatically after adds
+            } catch (e) {
+                console.error("Seeding failed:", e);
             }
-            return seeded;
+            seeding = false;
+            return;
         }
 
         const products = snapshot.docs.map(doc => ({
@@ -38,15 +45,14 @@ export async function getAllProducts() {
             ...doc.data()
         }));
 
-        return products;
-    } catch (error) {
-        console.error("Error getting products:", error);
-        return [];
-    }
+        onUpdate(products);
+    }, (error) => {
+        console.error("Error subscribing to products:", error);
+    });
 }
 
 /**
- * Retrieves a single product by ID.
+ * Retrieves a single product by ID (One-time fetch).
  * @param {string} id 
  * @returns {Promise<Object|null>}
  */
@@ -59,7 +65,6 @@ export async function getProductById(id) {
         if (docSnap.exists()) {
             return { id: docSnap.id, ...docSnap.data() };
         } else {
-            console.warn("No such product!");
             return null;
         }
     } catch (error) {
