@@ -7,7 +7,6 @@ const products = [
 ];
 
 // ===== Elements =====
-const productGrid = document.getElementById("productGrid");
 const cartCountEl = document.getElementById("cartcount");
 const shippingForm = document.getElementById("shippingForm");
 
@@ -31,35 +30,10 @@ function addToCart(product) {
 }
 
 // ===== Render Products =====
-function renderProducts(productList) {
-    productGrid.innerHTML = "";
 
-    productList.forEach(product => {
-        const productCard = document.createElement("div");
-        productCard.className = "product-card";
-
-        productCard.innerHTML = `
-            <a href="product.html?id=${product.id}" class="product-link">
-                <div class="product-img">Image</div>
-                <h3>${product.name}</h3>
-            </a>
-            <p class="price">$${product.price}</p>
-        `;
-
-        const button = document.createElement("button");
-        button.textContent = "Add to Cart";
-        button.onclick = (e) => {
-            e.preventDefault();
-            addToCart(product);
-        };
-
-        productCard.appendChild(button);
-        productGrid.appendChild(productCard);
-    });
-}
 
 // ===== Initial Load =====
-renderProducts(products);
+
 updateCartCount();
 
 // ===== Search Functionality =====
