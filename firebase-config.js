@@ -1,5 +1,6 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import { getFirestore } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+// using version 10.8.0 for stability
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC8ti8Fxho2YUf-dFuQnuTE1ESHp6t0ne4",
@@ -11,7 +12,14 @@ const firebaseConfig = {
   measurementId: "G-DN6X1JR9MD"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+let app, db;
+try {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  console.log("Firebase initialized (v10.8.0)");
+} catch (e) {
+  console.error("Firebase init failed:", e);
+  alert("Database connection failed. Please reload.");
+}
 
 export { db };
