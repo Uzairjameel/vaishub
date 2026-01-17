@@ -80,7 +80,7 @@ async function initCheckout() {
             try {
                 // RACE: Firebase vs 15s Timeout
                 const timeout = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error("Request timed out. Check internet connection.")), 15000)
+                    setTimeout(() => reject(new Error("Request timed out. This often happens if the Firestore Database is not created in the Firebase Console.")), 15000)
                 );
 
                 const doOrder = addDoc(collection(db, "orders"), orderData);
@@ -94,7 +94,13 @@ async function initCheckout() {
 
             } catch (err) {
                 console.error("Submission Error:", err);
-                alert("Failed to place order: " + err.message);
+
+                let msg = err.message;
+                if (msg.includes("timed out")) {
+                    msg += "\n\nPOSSIBLE CAUSE: The Firestore Database has not been created yet in the Firebase Console.";
+                }
+
+                alert("Failed to place order: " + msg);
 
                 if (submitBtn) {
                     submitBtn.disabled = false;

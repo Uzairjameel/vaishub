@@ -90,13 +90,24 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         }, (error) => {
             console.error("Error fetching orders:", error);
-            // Specific help for the 'missing index' error
-            const isIndexError = error.message.includes("index");
+
+            let errorMsg = error.message;
+            let tip = "";
+
+            if (error.message.includes("does not exist") || error.code === "not-found") {
+                errorMsg = "<strong>CRITICAL: Firestore Database Not Found</strong>";
+                tip = `<br><br>The database has not been created in the Firebase Console.<br>
+                       <a href='https://console.firebase.google.com/project/vaishub-87982/firestore' target='_blank' style='color:blue; text-decoration:underline;'>Click here to Create Database</a><br>
+                       (Select 'Start in Test Mode' for now)`;
+            } else if (error.message.includes("index")) {
+                tip = "<br><br><em>Tip: Check console for index creation link.</em>";
+            }
+
             ordersList.innerHTML = `
                 <div style="color:red; background:#ffe6e6; padding:15px; border-left:5px solid red;">
-                    <strong>Error Loading Orders</strong><br>
-                    ${error.message}
-                    ${isIndexError ? '<br><br><em>Tip: Open Console (F12) and click the link provided by Firebase to create the required index.</em>' : ''}
+                    ${errorMsg}
+                    ${tip}
+                    <br><small>Raw Error: ${error.message}</small>
                 </div>
             `;
         });
