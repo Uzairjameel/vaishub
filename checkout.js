@@ -5,7 +5,7 @@ import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.8.0/fi
 let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
 // ===== Elements =====
-const totalEl = document.getElementById("total");
+const totalEl = document.getElementById("checkoutTotal");
 const shippingForm = document.getElementById("shippingForm");
 
 // ===== Render Total =====
