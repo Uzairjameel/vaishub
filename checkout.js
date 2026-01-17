@@ -1,7 +1,7 @@
 import { db } from "./firebase-config.js";
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-console.log("Checkout module running...");
+console.log("Checkout module running... v3");
 
 // ===== Initialize =====
 async function initCheckout() {
@@ -56,27 +56,46 @@ async function initCheckout() {
 
             const val = (id) => document.getElementById(id)?.value.trim() || "";
 
-            const order = {
+            // Construct order
+            const orderData = {
                 customerName: val("name"),
                 phone: val("phone"),
                 address: val("address"),
                 city: val("city"),
                 zip: val("zip"),
                 country: val("country"),
-                products: cart,
+                products: cart.map(item => ({
+                    id: item.id || 'unknown',
+                    name: item.name || 'Unknown Product',
+                    price: parseFloat(item.price) || 0,
+                    qty: parseInt(item.qty) || 1
+                })),
                 total: parseFloat(totalEl?.textContent) || 0,
-                createdAt: new Date()
+                createdAt: new Date(),
+                status: "pending"
             };
 
+            console.log("Payload:", orderData);
+
             try {
-                const docRef = await addDoc(collection(db, "orders"), order);
+                // RACE: Firebase vs 15s Timeout
+                const timeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error("Request timed out. Check internet connection.")), 15000)
+                );
+
+                const doOrder = addDoc(collection(db, "orders"), orderData);
+
+                const docRef = await Promise.race([doOrder, timeout]);
+
                 console.log("Success:", docRef.id);
-                alert("Order placed successfully!");
+                alert("Order placed successfully! ID: " + docRef.id);
                 localStorage.removeItem("cart");
                 window.location.href = "index.html";
+
             } catch (err) {
-                console.error("Firebase Error:", err);
-                alert("Error: " + err.message);
+                console.error("Submission Error:", err);
+                alert("Failed to place order: " + err.message);
+
                 if (submitBtn) {
                     submitBtn.disabled = false;
                     submitBtn.textContent = "Place Order";
@@ -85,12 +104,12 @@ async function initCheckout() {
         };
         console.log("Form listener attached.");
     } else {
-        console.error("CRITICAL: Form not found. Retrying in 500ms...");
-        setTimeout(initCheckout, 500); // Retry mechanism if DOM isn't ready for some reason
+        console.error("Form not found. Retrying...");
+        setTimeout(initCheckout, 1000);
     }
 }
 
-// Run initialization
+// Ensure execution
 if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initCheckout);
 } else {
