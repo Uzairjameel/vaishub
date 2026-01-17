@@ -12,6 +12,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (ordersList) {
         console.log("Initializing Admin Orders view...");
+        if (!db) {
+            console.error("CRITICAL: DB is undefined in admin-orders.js");
+            ordersList.innerHTML = "<p style='color:red'>Database connection failed.</p>";
+            return;
+        }
         const ordersCollection = collection(db, "orders");
 
         // Real-time listener: Order by createdAt Descending

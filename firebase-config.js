@@ -12,14 +12,8 @@ const firebaseConfig = {
   measurementId: "G-DN6X1JR9MD"
 };
 
-let app, db;
-try {
-  app = initializeApp(firebaseConfig);
-  db = getFirestore(app);
-  console.log("Firebase initialized (v10.8.0)");
-} catch (e) {
-  console.error("Firebase init failed:", e);
-  alert("Database connection failed. Please reload.");
-}
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+console.log("Firebase v10.8.0 Initialized. DB:", db);
 
-export { db };
+export { app, db };
