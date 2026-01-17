@@ -1,74 +1,94 @@
 import { db } from "./firebase-config.js";
 import { collection, addDoc } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
 
-console.log("Checkout script loaded");
+console.log("Checkout module loaded");
 
-// ===== Cart =====
-let cart = JSON.parse(localStorage.getItem("cart")) || [];
-console.log("Cart loaded:", cart);
+document.addEventListener("DOMContentLoaded", () => {
+    console.log("DOM fully loaded");
 
-// ===== Elements =====
-const totalEl = document.getElementById("checkoutTotal");
-const shippingForm = document.getElementById("shippingForm");
+    // ===== Cart =====
+    let cart = [];
+    try {
+        const storedCart = localStorage.getItem("cart");
+        cart = storedCart ? JSON.parse(storedCart) : [];
+    } catch (e) {
+        console.error("Error parsing cart from localStorage:", e);
+        cart = [];
+    }
+    console.log("Cart contents:", cart);
 
-// ===== Render Total =====
-function renderTotal() {
-    if (!totalEl) return;
+    // ===== Elements =====
+    const totalEl = document.getElementById("checkoutTotal");
+    const shippingForm = document.getElementById("shippingForm");
 
-    const total = cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0);
-    totalEl.textContent = `$${total}`;
-}
-
-renderTotal();
-
-// ===== Place Order =====
-if (shippingForm) {
-    console.log("Shipping form found, attaching listener");
-
-    shippingForm.addEventListener("submit", async function (e) {
-        e.preventDefault();
-        console.log("Form submitted");
-
-        if (cart.length === 0) {
-            alert("Cart is empty");
+    // ===== Render Total =====
+    function renderTotal() {
+        if (!totalEl) {
+            console.warn("Total element 'checkoutTotal' not found");
             return;
         }
 
-        // Get values
-        const nameVal = document.getElementById("name").value;
-        const phoneVal = document.getElementById("phone").value;
-        const addressVal = document.getElementById("address").value;
-        const cityVal = document.getElementById("city").value;
-        const zipVal = document.getElementById("zip").value;
-        const countryVal = document.getElementById("country").value;
+        const total = cart.reduce((sum, item) => {
+            const price = parseFloat(item.price) || 0;
+            const qty = parseInt(item.qty) || 1;
+            return sum + (price * qty);
+        }, 0);
 
-        // Construct Order Object (matching User Request fields)
-        const order = {
-            customerName: nameVal, // User requested 'customerName'
-            phone: phoneVal,
-            address: addressVal,
-            city: cityVal,
-            zip: zipVal,
-            country: countryVal,
-            products: cart,        // User requested 'products'
-            total: cart.reduce((sum, item) => sum + (item.price * (item.qty || 1)), 0),
-            createdAt: new Date()  // Timestamp
-        };
+        console.log("Calculated Total:", total);
+        totalEl.textContent = `${total.toFixed(2)}`;
+    }
 
-        console.log("Placing order:", order);
+    renderTotal();
 
-        try {
-            const docRef = await addDoc(collection(db, "orders"), order);
-            console.log("Order saved with ID:", docRef.id);
-            alert("Order placed successfully! ID: " + docRef.id);
+    // ===== Place Order =====
+    if (shippingForm) {
+        console.log("Shipping form found");
 
-            localStorage.removeItem("cart");
-            window.location.href = "index.html";
-        } catch (err) {
-            console.error("Error placing order:", err);
-            alert("Error placing order: " + err.message);
-        }
-    });
-} else {
-    console.error("Shipping form NOT found in DOM");
-}
+        shippingForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            console.log("Submit triggered");
+
+            if (cart.length === 0) {
+                alert("Your cart is empty. Please add items.");
+                return;
+            }
+
+            // Get values safely
+            const val = (id) => {
+                const el = document.getElementById(id);
+                return el ? el.value.trim() : "";
+            };
+
+            const order = {
+                customerName: val("name"),
+                phone: val("phone"),
+                address: val("address"),
+                city: val("city"),
+                zip: val("zip"),
+                country: val("country"),
+                products: cart,
+                total: parseFloat(totalEl.textContent) || 0,
+                createdAt: new Date()
+            };
+
+            console.log("Attempting to save order:", order);
+
+            try {
+                // Submit to Firestore
+                const docRef = await addDoc(collection(db, "orders"), order);
+                console.log("Order successfully saved. ID:", docRef.id);
+
+                alert("Order placed successfully!");
+
+                // Clear cart and redirect
+                localStorage.removeItem("cart");
+                window.location.href = "index.html";
+            } catch (err) {
+                console.error("Firebase Error:", err);
+                alert("Failed to place order. Check console for details.\nError: " + err.message);
+            }
+        });
+    } else {
+        console.error("CRITICAL: Shipping form 'shippingForm' not found in DOM.");
+    }
+});
